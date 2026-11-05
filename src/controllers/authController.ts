@@ -69,7 +69,7 @@ export async function login(req: Request, res: Response): Promise<void> {
   res.cookie('topek_admin_token', token, {
     httpOnly: true,
     secure: isProduction,
-    sameSite: isProduction ? 'strict' : 'lax',
+    sameSite: isProduction ? 'none' : 'lax',
     maxAge: 24 * 60 * 60 * 1000, // 24 hours
   });
 
@@ -111,7 +111,12 @@ export async function logout(req: AuthRequest, res: Response): Promise<void> {
     });
   }
 
-  res.clearCookie('topek_admin_token');
+  const isProduction = process.env.NODE_ENV === 'production';
+  res.clearCookie('topek_admin_token', {
+    httpOnly: true,
+    secure: isProduction,
+    sameSite: isProduction ? 'none' : 'lax',
+  });
   res.json({
     success: true,
     message: 'Logged out successfully',

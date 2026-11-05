@@ -25,20 +25,27 @@ app.use(
   })
 );
 
-const allowedOrigins = [
-  process.env.CORS_ORIGIN || 'http://localhost:5173',
+const rawOrigins = process.env.CORS_ORIGIN
+  ? process.env.CORS_ORIGIN.split(',').map((o) => o.trim())
+  : [];
+
+const defaultOrigins = [
+  'http://localhost:5173',
   'http://localhost:3000',
   'http://127.0.0.1:5173',
 ];
 
+const allowedOrigins = Array.from(new Set([...rawOrigins, ...defaultOrigins]));
+
 app.use(
   cors({
     origin: (origin, callback) => {
-      // Allow requests with no origin (like mobile apps or curl)
-      if (!origin || allowedOrigins.includes(origin)) {
-        return callback(null, true);
-      }
-      return callback(new Error('Blocked by CORS security policy.'));
+      // Allow requests with no origin (like mobile apps, curl, server-to-server)
+      if (!origin) return callback(null, true);
+      if (allowedOrigins.includes(origin)) return callback(null, true);
+      // Automatically permit Vercel preview & production deployments
+      if (/^https:\/\/.*\.vercel\.app$/.test(origin)) return callback(null, true);
+      return callback(new Error(`Blocked by CORS security policy: ${origin}`));
     },
     credentials: true,
   })
