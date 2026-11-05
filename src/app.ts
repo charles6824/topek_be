@@ -26,10 +26,11 @@ app.use(
 );
 
 const rawOrigins = process.env.CORS_ORIGIN
-  ? process.env.CORS_ORIGIN.split(',').map((o) => o.trim())
+  ? process.env.CORS_ORIGIN.split(',').map((o) => o.trim().replace(/\/$/, ''))
   : [];
 
 const defaultOrigins = [
+  'https://topekfe-five.vercel.app',
   'http://localhost:5173',
   'http://localhost:3000',
   'http://127.0.0.1:5173',
@@ -42,9 +43,12 @@ app.use(
     origin: (origin, callback) => {
       // Allow requests with no origin (like mobile apps, curl, server-to-server)
       if (!origin) return callback(null, true);
-      if (allowedOrigins.includes(origin)) return callback(null, true);
+      const normalizedOrigin = origin.replace(/\/$/, '');
+      if (allowedOrigins.includes(origin) || allowedOrigins.includes(normalizedOrigin)) {
+        return callback(null, true);
+      }
       // Automatically permit Vercel preview & production deployments
-      if (/^https:\/\/.*\.vercel\.app$/.test(origin)) return callback(null, true);
+      if (/^https:\/\/.*\.vercel\.app\/?$/.test(origin)) return callback(null, true);
       return callback(new Error(`Blocked by CORS security policy: ${origin}`));
     },
     credentials: true,
